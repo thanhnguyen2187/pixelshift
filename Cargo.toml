@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 axum = "0.8.7"
 dotenvy = "0.15.7"
+serde = { version = "1.0.228", features = ["derive"] }
 snafu = "0.8.9"
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1.41"

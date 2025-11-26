@@ -1,6 +1,7 @@
 mod err;
+mod handlers;
 
-use axum::{Router, routing::get};
+use axum::{Router, routing::get, routing::post};
 use dotenvy::dotenv;
 use err::Result;
 use tracing::info;
@@ -25,7 +26,9 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let app = Router::new().route("/", get(hello_world));
+    let app = Router::new()
+        .route("/", get(hello_world))
+        .route("/api/v1/convert-url", post(handlers::convert_url));
     let host = std::env::var("HOST").unwrap_or(String::from("127.0.0.1"));
     let port = std::env::var("PORT").unwrap_or(String::from("3000"));
     let listener = tokio::net::TcpListener::bind(format!("{}:{}", host, port)).await?;
