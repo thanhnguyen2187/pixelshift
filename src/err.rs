@@ -21,6 +21,9 @@ pub enum Error {
 
     #[snafu(display("Making request error: {source}"))]
     MakingRequest { source: reqwest::Error },
+
+    #[snafu(display("Image error: {source}"))]
+    ImageError { source: image::ImageError },
 }
 
 impl IntoResponse for Error {
@@ -42,5 +45,11 @@ impl From<std::io::Error> for Error {
 impl From<reqwest::Error> for Error {
     fn from(source: reqwest::Error) -> Self {
         Error::MakingRequest { source }
+    }
+}
+
+impl From<image::ImageError> for Error {
+    fn from(source: image::ImageError) -> Self {
+        Error::ImageError { source }
     }
 }

@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use bytes::Bytes;
-// use std::io::Bytes;
 
 type ItemHash = u64;
 type TimestampSecond = i64;
