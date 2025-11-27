@@ -45,6 +45,8 @@ pub async fn convert_url(
     let state_read = state_arc.read().await;
     let mut cache_hit = true;
     if !state_read.cache_data.contains_key(&hash_key) {
+        // Do early drop to avoid later deadlock
+        drop(state_read);
         debug!("Cache wasn't hit for URL {}", payload.url);
         let bytes_input = reqwest::get(payload.url.clone()).await?.bytes().await?;
         debug!("Downloaded URL {}", payload.url);
