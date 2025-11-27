@@ -24,15 +24,23 @@ pub enum Error {
 
     #[snafu(display("Image error: {source}"))]
     ImageError { source: image::ImageError },
+
+    #[snafu(display("Input URL file is too large: {url}"))]
+    DownloadLargeFile { url: String },
 }
 
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Something went wrong: {}", self),
-        )
-            .into_response()
+        match self {
+            Error::DownloadLargeFile { url: _ } => {
+                (StatusCode::BAD_REQUEST, format!("Bad input: {}", self)).into_response()
+            }
+            _ => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Something went wrong: {}", self),
+            )
+                .into_response(),
+        }
     }
 }
 

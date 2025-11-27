@@ -1,23 +1,23 @@
-use crate::err::Result;
+use crate::err::{Error, Result};
 use axum::extract::{Path, State};
-use axum::http::{Response, StatusCode, header};
-use image::{AnimationDecoder, ImageFormat, ImageReader};
+use axum::http::{StatusCode, header};
+use image::{AnimationDecoder, ImageReader};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io::Cursor;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::app_state::AppState;
-use crate::global::CACHE_ITEM_MIN_SECONDS;
+use crate::global::MAX_DOWNLOAD_SIZE_BYTES;
 use axum::Json;
 use axum::response::IntoResponse;
 use bytes::Bytes;
 use image::codecs::gif;
-use image::codecs::gif::{GifDecoder, GifEncoder};
+use image::codecs::gif::GifEncoder;
 use image::codecs::webp::WebPDecoder;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
-use tracing::{debug, info};
+use tracing::debug;
+use tracing::log::warn;
 
 // TODO check whether we only need Serialize or Deserialize
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq)]
@@ -48,7 +48,15 @@ pub async fn convert_url(
         // Do early drop to avoid later deadlock
         drop(state_read);
         debug!("Cache wasn't hit for URL {}", payload.url);
-        let bytes_input = reqwest::get(payload.url.clone()).await?.bytes().await?;
+
+        let response = reqwest::get(payload.url.clone()).await?;
+        if let Some(file_size_bytes) = response.content_length() {
+            if file_size_bytes > *MAX_DOWNLOAD_SIZE_BYTES {
+                warn!("File from URL {} is too large!", payload.url);
+                return Err(Error::DownloadLargeFile { url: payload.url });
+            }
+        }
+        let bytes_input = response.bytes().await?;
         debug!("Downloaded URL {}", payload.url);
         let reader = ImageReader::new(Cursor::new(bytes_input)).with_guessed_format()?;
         let frames = WebPDecoder::new(reader.into_inner())?
@@ -59,7 +67,7 @@ pub async fn convert_url(
         let mut bytes_output: Vec<u8> = Vec::new();
         let cursor_output = Cursor::new(&mut bytes_output);
         // Set higher speed to make the process faster
-        let mut encoder = GifEncoder::new_with_speed(cursor_output, 10);
+        let mut encoder = GifEncoder::new_with_speed(cursor_output, 15);
         encoder.set_repeat(gif::Repeat::Infinite)?;
         encoder.encode_frames(frames)?;
         drop(encoder);
@@ -69,6 +77,7 @@ pub async fn convert_url(
         state_write
             .cache_data
             .put(hash_key, Bytes::from(bytes_output));
+
         debug!("Stored output of URL {} into cache", payload.url);
         cache_hit = false;
     }

@@ -1,33 +1,33 @@
 use std::sync::LazyLock;
 use tracing::warn;
 
-pub static CACHE_ITEM_MIN_SECONDS: LazyLock<i64> = LazyLock::new(|| {
-    static VAR: &str = "PIXELSHIFT_CACHE_ITEM_MIN_SECONDS";
-    static DEFAULT: &str = "60";
+pub static CACHE_MAX_SIZE: LazyLock<usize> = LazyLock::new(|| {
+    static VAR: &str = "PIXELSHIFT_CACHE_MAX_SIZE";
+    static DEFAULT: &str = "100";
 
-    let value: i64 = std::env::var(VAR.to_string())
+    let value: usize = std::env::var(VAR.to_string())
         .unwrap_or_else(|err| {
             warn!("Using default value {} for {}: {}", DEFAULT, VAR, err);
 
             DEFAULT.to_string()
         })
-        .parse::<i64>()
+        .parse::<usize>()
         .expect(format!("Error happened parsing value for {}", VAR.to_string()).as_str());
 
     value
 });
 
-pub static CACHE_TOTAL_MAX_BYTES: LazyLock<i64> = LazyLock::new(|| {
-    static VAR: &str = "PIXELSHIFT_CACHE_TOTAL_MAX_BYTES";
-    static DEFAULT: &str = "500000000"; // 500MB
+pub static MAX_DOWNLOAD_SIZE_BYTES: LazyLock<u64> = LazyLock::new(|| {
+    static VAR: &str = "PIXELSHIFT_MAX_DOWNLOAD_SIZE_BYTES";
+    static DEFAULT: &str = "5000000"; // 5MB
 
-    let value: i64 = std::env::var(VAR.to_string())
+    let value: u64 = std::env::var(VAR.to_string())
         .unwrap_or_else(|err| {
             warn!("Using default value {} for {}: {}", DEFAULT, VAR, err);
 
             DEFAULT.to_string()
         })
-        .parse::<i64>()
+        .parse::<u64>()
         .expect(format!("Error happened parsing value for {}", VAR.to_string()).as_str());
 
     value
@@ -58,4 +58,3 @@ pub static PORT: LazyLock<String> = LazyLock::new(|| {
 
     value
 });
-
