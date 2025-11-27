@@ -26,6 +26,7 @@ pub struct ConvertURLPayload {
 #[serde(rename_all = "camelCase")]
 pub struct ConvertURLResponse {
     pub url: String,
+    pub cache_hit: bool,
 }
 
 pub async fn convert_url(
@@ -38,17 +39,19 @@ pub async fn convert_url(
     let mut state = state_arc.write().await;
     if state.cache_data.contains_key(&hash_key) {
         return Ok(Json(ConvertURLResponse {
-            url: "success".to_string(),
+            url: format!("/api/v1/output/{hash_key}"),
+            cache_hit: true,
         }));
     }
 
     let result_bytes = reqwest::get(payload.url.clone()).await?.bytes().await?;
     state.cache_data.insert(hash_key, result_bytes);
-    return Ok(Json(ConvertURLResponse {
-        url: "success!!".to_string(),
-    }));
+    Ok(Json(ConvertURLResponse {
+        url: format!("/api/v1/output/{hash_key}"),
+        cache_hit: false,
+    }))
 
     // info!("Hello! {}", CACHE_ITEM_MIN_SECONDS);
 
-    Ok(Json(ConvertURLResponse { url: payload.url }))
+    // Ok(Json(ConvertURLResponse { url: payload.url }))
 }
