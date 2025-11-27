@@ -58,6 +58,7 @@ pub async fn convert_url(
         }
         let bytes_input = response.bytes().await?;
         debug!("Downloaded URL {}", payload.url);
+
         let reader = ImageReader::new(Cursor::new(bytes_input)).with_guessed_format()?;
         let frames = WebPDecoder::new(reader.into_inner())?
             .into_frames()
