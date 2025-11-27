@@ -3,7 +3,7 @@ mod err;
 mod global;
 mod handlers;
 
-use crate::global::{CACHE_ITEM_MIN_SECONDS, CACHE_TOTAL_MAX_BYTES};
+use crate::global::{CACHE_ITEM_MIN_SECONDS, CACHE_TOTAL_MAX_BYTES, HOST, PORT};
 use app_state::AppState;
 use axum::{Router, routing::get, routing::post};
 use dotenvy::dotenv;
@@ -38,11 +38,9 @@ async fn main() -> Result<()> {
         .route("/", get(hello_world))
         .route("/api/v1/convert-url", post(handlers::convert_url))
         .with_state(state);
-    let host = std::env::var("HOST").unwrap_or(String::from("127.0.0.1"));
-    let port = std::env::var("PORT").unwrap_or(String::from("3000"));
-    let listener = tokio::net::TcpListener::bind(format!("{}:{}", host, port)).await?;
+    let listener = tokio::net::TcpListener::bind(format!("{}:{}", *HOST, *PORT)).await?;
 
-    info!("Server running on http://{}:{}", host, port);
+    info!("Server running on http://{}:{}", *HOST, *PORT);
     info!(
         "A cached item would exists for at least {} second(s)",
         *CACHE_ITEM_MIN_SECONDS
