@@ -58,7 +58,8 @@ pub async fn convert_url(
 
         let mut bytes_output: Vec<u8> = Vec::new();
         let cursor_output = Cursor::new(&mut bytes_output);
-        let mut encoder = GifEncoder::new(cursor_output);
+        // Set higher speed to make the process faster
+        let mut encoder = GifEncoder::new_with_speed(cursor_output, 10);
         encoder.set_repeat(gif::Repeat::Infinite)?;
         encoder.encode_frames(frames)?;
         drop(encoder);
