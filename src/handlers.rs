@@ -44,7 +44,7 @@ pub async fn convert_url(
     let hash_key = hasher.finish();
     let state_read = state_arc.read().await;
     let mut cache_hit = true;
-    if !state_read.cache_data.contains_key(&hash_key) {
+    if !state_read.cache_data.contains(&hash_key) {
         // Do early drop to avoid later deadlock
         drop(state_read);
         debug!("Cache wasn't hit for URL {}", payload.url);
@@ -68,7 +68,7 @@ pub async fn convert_url(
         let mut state_write = state_arc.write().await;
         state_write
             .cache_data
-            .insert(hash_key, Bytes::from(bytes_output));
+            .put(hash_key, Bytes::from(bytes_output));
         debug!("Stored output of URL {} into cache", payload.url);
         cache_hit = false;
     }
@@ -83,8 +83,10 @@ pub async fn output(
     State(state_arc): State<Arc<RwLock<AppState>>>,
     Path(hash_id): Path<u64>,
 ) -> impl IntoResponse {
-    let state = state_arc.read().await;
+    let mut state = state_arc.write().await;
     let bytes = state.cache_data.get(&hash_id).cloned();
+    // Drop early to avoid unnecessary locking
+    drop(state);
 
     if let Some(bytes) = bytes {
         return (StatusCode::OK, [(header::CONTENT_TYPE, "image/gif")], bytes);

@@ -3,12 +3,11 @@ mod err;
 mod global;
 mod handlers;
 
-use crate::global::{CACHE_ITEM_MIN_SECONDS, CACHE_TOTAL_MAX_BYTES, HOST, PORT};
+use crate::global::{CACHE_MAX_SIZE, HOST, MAX_DOWNLOAD_SIZE_BYTES, PORT};
 use app_state::AppState;
 use axum::{Router, routing::get, routing::post};
 use dotenvy::dotenv;
 use err::Result;
-use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
@@ -42,14 +41,11 @@ async fn main() -> Result<()> {
     let listener = tokio::net::TcpListener::bind(format!("{}:{}", *HOST, *PORT)).await?;
 
     info!("Server running on http://{}:{}", *HOST, *PORT);
+    info!("Server would cache {} item(s) at most", *CACHE_MAX_SIZE);
     info!(
-        "A cached item would exists for at least {} second(s)",
-        *CACHE_ITEM_MIN_SECONDS
-    );
-    info!(
-        "All cached items size would not exceed {} byte(s)/{} mb(s)",
-        *CACHE_TOTAL_MAX_BYTES,
-        *CACHE_TOTAL_MAX_BYTES / (1024 * 1024),
+        "Server would not download files that are larger than {} byte(s)/{:.2} mb(s)",
+        *MAX_DOWNLOAD_SIZE_BYTES,
+        (*MAX_DOWNLOAD_SIZE_BYTES as f64) / (1024.0 * 1024.0),
     );
 
     axum::serve(listener, app).await?;

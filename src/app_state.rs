@@ -1,24 +1,17 @@
-use std::collections::HashMap;
+use crate::global::CACHE_MAX_SIZE;
 use bytes::Bytes;
-
-type ItemHash = u64;
-type TimestampSecond = i64;
+use lru::LruCache;
+use std::num::NonZeroUsize;
 
 pub struct AppState {
-    /// When was an item stored in cache
-    pub cache_time: HashMap<ItemHash, TimestampSecond>,
-    /// The data that was cached
-    pub cache_data: HashMap<ItemHash, Bytes>,
-
-    pub cache_total_bytes: usize,
+    pub cache_data: LruCache<u64, Bytes>,
 }
 
 impl AppState {
     pub fn new() -> Self {
+        let size = NonZeroUsize::new(*CACHE_MAX_SIZE).expect("unreachable code");
         AppState {
-            cache_time: HashMap::new(),
-            cache_data: HashMap::new(),
-            cache_total_bytes: 0,
+            cache_data: LruCache::new(size),
         }
     }
 }
