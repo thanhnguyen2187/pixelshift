@@ -1,14 +1,15 @@
 use crate::err::Result;
-use axum::extract::State;
+use axum::extract::{Path, State};
+use axum::http::{Response, StatusCode};
 use std::hash::{DefaultHasher, Hash, Hasher};
-use std::io::Bytes;
-use std::ops::DerefMut;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::app_state::AppState;
 use crate::global::CACHE_ITEM_MIN_SECONDS;
 use axum::Json;
+use axum::response::IntoResponse;
+use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use tracing::info;
@@ -37,21 +38,30 @@ pub async fn convert_url(
     payload.hash(&mut hasher);
     let hash_key = hasher.finish();
     let mut state = state_arc.write().await;
-    if state.cache_data.contains_key(&hash_key) {
-        return Ok(Json(ConvertURLResponse {
-            url: format!("/api/v1/output/{hash_key}"),
-            cache_hit: true,
-        }));
+    let mut cache_hit = true;
+    if !state.cache_data.contains_key(&hash_key) {
+        let result_bytes = reqwest::get(payload.url.clone()).await?.bytes().await?;
+        state.cache_total_bytes += result_bytes.len();
+        state.cache_data.insert(hash_key, result_bytes);
+        cache_hit = false;
     }
 
-    let result_bytes = reqwest::get(payload.url.clone()).await?.bytes().await?;
-    state.cache_data.insert(hash_key, result_bytes);
     Ok(Json(ConvertURLResponse {
         url: format!("/api/v1/output/{hash_key}"),
-        cache_hit: false,
+        cache_hit,
     }))
+}
 
-    // info!("Hello! {}", CACHE_ITEM_MIN_SECONDS);
+pub async fn output(
+    State(state_arc): State<Arc<RwLock<AppState>>>,
+    Path(hash_id): Path<u64>,
+) -> impl IntoResponse {
+    let state = state_arc.read().await;
+    let bytes = state.cache_data.get(&hash_id).cloned();
 
-    // Ok(Json(ConvertURLResponse { url: payload.url }))
+    if let Some(bytes) = bytes {
+        return (StatusCode::OK, bytes);
+    }
+
+    (StatusCode::NOT_FOUND, Bytes::new())
 }

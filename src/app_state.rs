@@ -7,11 +7,11 @@ type TimestampSecond = i64;
 
 pub struct AppState {
     /// When was an item stored in cache
-    cache_time: HashMap<ItemHash, TimestampSecond>,
+    pub cache_time: HashMap<ItemHash, TimestampSecond>,
     /// The data that was cached
     pub cache_data: HashMap<ItemHash, Bytes>,
 
-    cache_total_bytes: usize,
+    pub cache_total_bytes: usize,
 }
 
 impl AppState {
