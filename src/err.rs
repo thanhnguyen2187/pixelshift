@@ -18,6 +18,9 @@ pub enum Error {
         #[snafu(source(from(Box<dyn std::error::Error>, Some)))]
         source: Option<Box<dyn std::error::Error>>,
     },
+
+    #[snafu(display("Making request error: {source}"))]
+    MakingRequest { source: reqwest::Error },
 }
 
 impl IntoResponse for Error {
@@ -33,5 +36,11 @@ impl IntoResponse for Error {
 impl From<std::io::Error> for Error {
     fn from(source: std::io::Error) -> Self {
         Error::Io { source }
+    }
+}
+
+impl From<reqwest::Error> for Error {
+    fn from(source: reqwest::Error) -> Self {
+        Error::MakingRequest { source }
     }
 }

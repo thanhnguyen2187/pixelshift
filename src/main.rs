@@ -1,9 +1,16 @@
+mod app_state;
 mod err;
+mod global;
 mod handlers;
 
+use crate::global::{CACHE_ITEM_MIN_SECONDS, CACHE_TOTAL_MAX_BYTES};
+use app_state::AppState;
 use axum::{Router, routing::get, routing::post};
 use dotenvy::dotenv;
 use err::Result;
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -26,14 +33,25 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    let state = Arc::new(RwLock::new(AppState::new()));
     let app = Router::new()
         .route("/", get(hello_world))
-        .route("/api/v1/convert-url", post(handlers::convert_url));
+        .route("/api/v1/convert-url", post(handlers::convert_url))
+        .with_state(state);
     let host = std::env::var("HOST").unwrap_or(String::from("127.0.0.1"));
     let port = std::env::var("PORT").unwrap_or(String::from("3000"));
     let listener = tokio::net::TcpListener::bind(format!("{}:{}", host, port)).await?;
 
     info!("Server running on http://{}:{}", host, port);
+    info!(
+        "A cached item would exists for at least {} second(s)",
+        *CACHE_ITEM_MIN_SECONDS
+    );
+    info!(
+        "All cached items size would not exceed {} byte(s)/{} mb(s)",
+        *CACHE_TOTAL_MAX_BYTES,
+        *CACHE_TOTAL_MAX_BYTES / (1024 * 1024),
+    );
 
     axum::serve(listener, app).await?;
 
