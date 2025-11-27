@@ -24,8 +24,6 @@ use tracing::log::warn;
 #[serde(rename_all = "camelCase")]
 pub struct ConvertURLPayload {
     pub url: String,
-    pub extension_input: String,
-    pub extension_output: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
