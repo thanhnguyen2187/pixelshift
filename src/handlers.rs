@@ -1,6 +1,6 @@
 use crate::err::Result;
 use axum::extract::{Path, State};
-use axum::http::{Response, StatusCode};
+use axum::http::{Response, StatusCode, header};
 use image::{AnimationDecoder, ImageFormat, ImageReader};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io::Cursor;
@@ -87,8 +87,12 @@ pub async fn output(
     let bytes = state.cache_data.get(&hash_id).cloned();
 
     if let Some(bytes) = bytes {
-        return (StatusCode::OK, bytes);
+        return (StatusCode::OK, [(header::CONTENT_TYPE, "image/gif")], bytes);
     }
 
-    (StatusCode::NOT_FOUND, vec![].into())
+    (
+        StatusCode::NOT_FOUND,
+        [(header::CONTENT_TYPE, "text/plain")],
+        Bytes::from("not found"),
+    )
 }
