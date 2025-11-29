@@ -1,7 +1,7 @@
 use crate::err::{Error, Result};
 use axum::extract::{Path, State};
 use axum::http::{StatusCode, header};
-use image::{AnimationDecoder, ImageReader};
+use image::{AnimationDecoder, ImageFormat, ImageReader};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io::Cursor;
 use std::sync::Arc;
@@ -114,7 +114,21 @@ pub async fn convert_url_v2(
         let bytes_input = response.bytes().await?;
         debug!("Downloaded URL {}", &url);
 
-        let reader = ImageReader::new(Cursor::new(bytes_input)).with_guessed_format()?;
+        let reader = ImageReader::new(Cursor::new(bytes_input.clone())).with_guessed_format()?;
+        match reader.format() {
+            Some(ImageFormat::WebP) => {}
+            Some(ImageFormat::Gif) => {
+                return Ok((
+                    StatusCode::OK,
+                    [(header::CONTENT_TYPE, "image/gif")],
+                    bytes_input,
+                ));
+            }
+            _ => {
+                return Err(Error::URLContent {});
+            }
+        }
+
         let frames = WebPDecoder::new(reader.into_inner())?
             .into_frames()
             .collect_frames()?;

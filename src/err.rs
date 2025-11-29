@@ -27,12 +27,15 @@ pub enum Error {
 
     #[snafu(display("Input URL file is too large: {url}"))]
     DownloadLargeFile { url: String },
+
+    #[snafu(display("Cannot convert the URL content to GIF"))]
+    URLContent {},
 }
 
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
         match self {
-            Error::DownloadLargeFile { url: _ } => {
+            Error::DownloadLargeFile { url: _ } | Error::URLContent {} => {
                 (StatusCode::BAD_REQUEST, format!("Bad input: {}", self)).into_response()
             }
             _ => (
