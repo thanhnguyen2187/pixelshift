@@ -36,6 +36,10 @@ async fn main() -> Result<()> {
     let app = Router::new()
         .route("/", get(hello_world))
         .route("/api/v1/convert-url", post(handlers::convert_url))
+        .route(
+            "/api/v1/convert/{extension_input}/{extension_output}/{url}",
+            get(handlers::convert_url_v2),
+        )
         .route("/api/v1/output/{hash_id}", get(handlers::output))
         .with_state(state);
     let listener = tokio::net::TcpListener::bind(format!("{}:{}", *HOST, *PORT)).await?;

@@ -87,6 +87,17 @@ pub async fn convert_url(
     }))
 }
 
+pub async fn convert_url_v2(
+    State(state_arc): State<Arc<RwLock<AppState>>>,
+    Path((extension_input, extension_output, url)): Path<(String, String, String)>,
+) -> Result<impl IntoResponse> {
+    let mut hasher = DefaultHasher::new();
+    (extension_input, extension_output, url.clone()).hash(&mut hasher);
+    let hash_key = hasher.finish();
+
+    Ok(hash_key.to_string())
+}
+
 pub async fn output(
     State(state_arc): State<Arc<RwLock<AppState>>>,
     Path(hash_id): Path<u64>,
