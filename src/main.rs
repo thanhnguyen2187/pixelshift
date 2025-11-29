@@ -5,7 +5,7 @@ mod handlers;
 
 use crate::global::{CACHE_MAX_SIZE, HOST, MAX_DOWNLOAD_SIZE_BYTES, PORT};
 use app_state::AppState;
-use axum::{Router, routing::get, routing::post};
+use axum::{Router, routing::get};
 use dotenvy::dotenv;
 use err::Result;
 use std::sync::Arc;
@@ -35,12 +35,10 @@ async fn main() -> Result<()> {
     let state = Arc::new(RwLock::new(AppState::new()));
     let app = Router::new()
         .route("/", get(hello_world))
-        .route("/api/v1/convert-url", post(handlers::convert_url))
         .route(
             "/api/v1/convert/{extension_output}/{url}",
             get(handlers::convert_url_v2),
         )
-        .route("/api/v1/output/{hash_id}", get(handlers::output))
         .with_state(state);
     let listener = tokio::net::TcpListener::bind(format!("{}:{}", *HOST, *PORT)).await?;
 
