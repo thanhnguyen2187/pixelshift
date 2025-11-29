@@ -34,7 +34,11 @@ async fn main() -> Result<()> {
 
     let state = Arc::new(RwLock::new(AppState::new()));
     let app = Router::new()
-        .route("/", get(hello_world))
+        .route("/", get(async || "Pixelshift works!"))
+        .route(
+            "/api/v1/health",
+            get(async || "OK"),
+        )
         .route(
             "/api/v1/convert/{extension_output}/{url}",
             get(handlers::convert_url_v2),
@@ -53,8 +57,4 @@ async fn main() -> Result<()> {
     axum::serve(listener, app).await?;
 
     Ok(())
-}
-
-async fn hello_world() -> &'static str {
-    "Hello, World!"
 }
