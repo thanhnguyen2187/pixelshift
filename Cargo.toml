@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum = "0.8.7"
+axum = { version = "0.8.7", features = ["tracing", "http2"] }
 bytes = "1.11.0"
 dotenvy = "0.15.7"
 image = "0.25.9"
